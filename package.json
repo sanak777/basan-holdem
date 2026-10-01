@@ -1,6 +1,6 @@
 {
   "name": "basan-holdem",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "private": true,
   "description": "바카라산악회 멀티플레이 텍사스 홀덤",
   "type": "module",

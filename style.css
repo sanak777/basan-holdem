@@ -14,3 +14,31 @@ button,input{touch-action:manipulation}button:active:not(:disabled){transform:tr
 /* Host controls live below the betting panel, leaving the table at the top. */
 .admin-bar{max-width:650px;margin:14px auto 0;padding:12px 10px;justify-content:flex-start;border:1px solid #3b514039;border-radius:10px;background:#101c17;gap:8px}.admin-bar button{min-height:34px}
 @media(max-width:650px){.table-meta{margin:2px 6px 0}.table-wrap{margin-top:0}.admin-bar{margin:12px auto 0;padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:7px}.admin-bar button{font-size:11px;padding:9px 6px;min-height:38px}}
+
+/* Compact phone table: no empty band above the felt, betting panel follows closely. */
+@media(max-width:650px){
+ .table-meta{margin:0 6px 4px;line-height:16px}
+ .table-wrap{height:clamp(430px,calc(100svh - 240px),520px);margin:0 auto 0}
+ .felt{inset:4px 28px 24px}
+ .seat:nth-child(1){top:10%}
+ .seat:nth-child(2),.seat:nth-child(10){top:25%}
+ .seat:nth-child(3),.seat:nth-child(9){top:44%}
+ .seat:nth-child(4),.seat:nth-child(8){top:64%}
+ .seat:nth-child(5),.seat:nth-child(7){top:84%}
+ .seat:nth-child(6){top:94%}
+ .table-center{top:40%;width:270px}
+ .table-center .card{width:38px;height:53px}
+ .table-center .card .rank,.table-center .card .suit{font-size:20px}
+ .pot{font-size:20px;margin:3px 0 8px}
+ .table-status{margin-top:8px;font-size:10px}
+ .blind-label{margin-top:5px}
+ .seat-cards{height:29px}.seat-cards .card{height:28px;width:22px}
+ .seat-cards .rank,.seat-cards .suit{font-size:12px}
+ .seat-box{padding:5px 7px;min-height:43px}
+ .seat .seat-action{font-size:9px;margin-top:2px}
+ .seat .chip-bet{font-size:10px;padding:2px 5px;min-height:17px;margin-top:2px}
+ .seat.me .own-hand,.seat.me .made-label{font-size:8px;margin-top:1px}
+ .actions-panel{margin-top:28px;padding:10px}
+ .my-status{margin-bottom:7px}.made-info{margin-bottom:7px;font-size:10px}
+ .result{margin-top:28px}.result:not([hidden])+.actions-panel{margin-top:8px}
+}
