@@ -122,6 +122,8 @@ function render(state) {
 }
 function updateActions() {
   const l=current?.legal,disabled=!l||busy||!connected;
+  $('action-buttons').hidden=!$('raise-form').hidden;
+  $('raise-confirm').disabled=disabled;$('raise-cancel').disabled=busy;
   $('fold').disabled=disabled;$('call').disabled=disabled||l?.check;$('check').disabled=disabled||!l?.check;
   $('call').textContent=l&&!l.check?`콜 ${fmt(l.call)}`:'콜';
   $('raise-toggle').disabled=disabled||!l?.canRaise||l.max<=current.currentBet;
@@ -168,10 +170,11 @@ $('admin-form').addEventListener('submit',async e=>{
 });
 document.querySelectorAll('.close-dialog').forEach(b=>b.onclick=()=>b.closest('dialog').close());
 $('seats').onclick=async e=>{const button=e.target.closest('[data-seat]');if(button)await command('/api/sit',{seat:Number(button.dataset.seat)});};
-async function act(kind,amount){if(!current?.legal)return;const ok=await command('/api/action',{kind,amount,handNo:current.handNo,version:current.version});if(ok)$('raise-form').hidden=true;}
+async function act(kind,amount){if(!current?.legal)return;const ok=await command('/api/action',{kind,amount,handNo:current.handNo,version:current.version});if(ok){$('raise-form').hidden=true;updateActions();}}
 $('fold').onclick=()=>act('fold');$('call').onclick=()=>act('call');$('check').onclick=()=>act('check');
 $('allin').onclick=()=>{if(confirm(`보유한 ${fmt(current.legal.max-(current.seats.find(p=>p?.id===current.me)?.bet||0))}칩을 모두 베팅할까요?`))act('allin');};
-$('raise-toggle').onclick=()=>{$('raise-form').hidden=!$('raise-form').hidden;$('raise-amount').value=Math.min(current.legal.min,current.legal.max);};
+$('raise-toggle').onclick=()=>{$('raise-form').hidden=!$('raise-form').hidden;$('raise-amount').value=Math.min(current.legal.min,current.legal.max);updateActions();};
+$('raise-cancel').onclick=()=>{$('raise-form').hidden=true;updateActions();};
 $('raise-form').addEventListener('submit',e=>{e.preventDefault();act('raise',Number($('raise-amount').value));});
 document.querySelectorAll('[data-bet]').forEach(b=>b.onclick=()=>{
   if(!current?.legal)return;const l=current.legal;

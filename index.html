@@ -41,14 +41,16 @@
     <section class="actions-panel">
       <div class="my-status"><span id="my-status">관전 중</span><span id="turn-timer"></span></div>
       <div id="made-info" class="made-info" hidden>메이드: 리버까지 원페어 이상이 될 확률 · 상대를 이길 승률과 별도</div>
+      <div id="action-buttons">
       <div class="action-grid">
         <button id="call" class="check-call" disabled>콜</button><button id="raise-toggle" class="raise" disabled>레이즈</button><button id="check" class="check-call" disabled>체크</button><button id="fold" class="fold" disabled>폴드</button>
       </div>
       <button id="allin" class="allin allin-extra" disabled>올인</button>
+      </div>
       <form id="raise-form" class="raise-form" hidden>
-        <div class="raise-description">이번 라운드의 <b>총 베팅칩</b></div>
+        <div class="raise-header"><div class="raise-description">이번 라운드의 <b>총 베팅칩</b></div><button type="button" id="raise-cancel">취소</button></div>
         <div class="bet-presets"><button type="button" data-bet="min">최소</button><button type="button" data-bet="half">½ 팟</button><button type="button" data-bet="pot">팟</button><button type="button" data-bet="max">최대</button></div>
-        <div class="raise-entry"><input type="number" id="raise-amount" step="1" inputmode="numeric" aria-label="총 베팅칩"><button class="primary" type="submit">베팅 확정</button></div>
+        <div class="raise-entry"><input type="number" id="raise-amount" step="1" inputmode="numeric" aria-label="총 베팅칩"><button id="raise-confirm" class="primary" type="submit">베팅 확정</button></div>
         <small id="raise-hint"></small>
       </form>
       <div class="player-tools"><button id="away">자리비움</button><button id="leave-seat">자리에서 일어나기</button><button id="show-log">게임 기록</button><button id="exit-room">방 나가기</button></div>

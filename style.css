@@ -63,3 +63,5 @@ button,input{touch-action:manipulation}button:active:not(:disabled){transform:tr
  .seat:nth-child(5),.seat:nth-child(7){top:94%}
  .table-center{top:43%}
 }
+
+.raise-form{border-top:0;margin-top:0;padding-top:0}.raise-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}.raise-header .raise-description{margin:0}#raise-cancel{padding:5px 12px;font-size:11px}.raise-entry input{padding:10px}.raise-entry .primary{white-space:nowrap}
