@@ -28,7 +28,7 @@
     <div id="admin-bar" class="admin-bar" hidden>
       <button id="admin-panel-button" class="admin-badge">ADMIN <span>⌄</span></button>
       <button id="blind-adjust">블라인드 조정</button>
-      <button id="start-game" class="admin-start">게임 시작</button><button id="stop-game">현재 판 후 종료</button><button id="cancel-game" class="danger-text">즉시 종료</button>
+      <button id="start-game" class="admin-start">게임 시작</button><button id="stop-game" class="danger-text">게임 종료 · 전원 리셋</button>
     </div>
     <div class="table-meta"><span id="phase-label">참가자 대기</span><span id="hand-label">HAND 0</span></div>
     <section class="table-wrap" aria-label="홀덤 테이블">
@@ -45,6 +45,7 @@
     <section id="result" class="result" hidden aria-live="polite"></section>
     <section class="actions-panel">
       <div class="my-status"><span id="my-status">관전 중</span><span id="turn-timer"></span></div>
+      <div id="made-info" class="made-info" hidden>메이드: 리버까지 원페어 이상이 될 확률 · 상대를 이길 승률과 별도</div>
       <div class="action-grid">
         <button id="call" class="check-call" disabled>콜</button><button id="raise-toggle" class="raise" disabled>레이즈</button><button id="check" class="check-call" disabled>체크</button><button id="fold" class="fold" disabled>폴드</button>
       </div>
@@ -91,7 +92,7 @@
       </div><button class="primary wide" type="submit">설정 저장</button>
     </form>
     <div class="settings-actions"><button id="reset-chips">전체 칩 초기화</button><button id="admin-logout">관리자 로그아웃</button></div>
-    <p class="help-note">현재 판 후 종료: 승패를 정산하고 종료합니다.<br>즉시 종료: 현재 판을 취소하고 베팅칩을 돌려줍니다.</p>
+    <p class="help-note">게임 종료: 현재 판을 취소하고 전원을 관전으로 전환합니다.<br>다음 게임은 다시 착석해야 합니다. 게임 중 추가 착석·재바이인은 불가합니다.</p>
   </dialog>
   <dialog id="log-dialog"><div class="dialog-header"><h2>게임 기록</h2><button class="close-dialog" aria-label="닫기">×</button></div><div id="log-list"></div><button id="admin-login-in-room" class="text-button">방장 로그인</button></dialog>
   <div id="toast" class="toast" role="status" hidden></div>

@@ -88,7 +88,7 @@ function render(state) {
   const me=state.seats.find(p=>p?.id===state.me),mySeat=me?.seat;
   const seats=Array.from({length:10},(_,visual)=>{
     const seat=mySeat===undefined?visual:(visual+mySeat-5+10)%10,p=state.seats[seat];
-    if(!p)return `<div class="seat"><button class="empty-seat" data-seat="${seat}" ${me?'disabled':''}>＋ ${seat+1}번 좌석</button></div>`;
+    if(!p)return `<div class="seat"><button class="empty-seat" data-seat="${seat}" ${!state.canSit?'disabled':''}>${state.canSit?'＋':'잠김'} ${seat+1}번 좌석</button></div>`;
     const markers=p.seat===state.dealer?'D':p.seat===state.smallSeat&&state.phase==='preflop'?'SB':p.seat===state.bigSeat&&state.phase==='preflop'?'BB':'';
     const odds=state.odds?.players.find(h=>h.id===p.id);
     const hand=state.result?.hands.find(h=>h.id===p.id)?.name||odds?.hand;
@@ -97,7 +97,7 @@ function render(state) {
       <div class="seat-cards">${p.cards.map(c=>card(c)).join('')}${odds?`<span class="equity-badge">${state.odds.estimated?'≈':''}${odds.percent}%</span>`:''}</div>
       <div class="seat-box"><div class="name">${esc(p.name)}${p.id===state.me?' · 나':''}${!p.connected?'<span class="offline-dot">●</span>':''}</div>
         <div class="chips">${p.allIn&&p.inHand&&state.phase!=='finished'?'ALL IN':fmt(p.chips)}</div>
-        ${ownHand?`<span class="own-hand">${esc(ownHand)}</span>`:''}<div class="seat-action">${esc(p.leaving?'퇴장 예약':p.away?'자리비움':(ownHand?p.action:hand||p.action)||'착석')}</div>
+        ${ownHand?`<span class="own-hand">${esc(ownHand)}</span>${state.myMade?`<span class="made-label" title="리버까지 원페어 이상이 될 확률">메이드 ${state.myMade.percent}%</span>`:''}`:''}<div class="seat-action">${esc(p.leaving?'퇴장 예약':p.away?'자리비움':(ownHand?p.action:hand||p.action)||'착석')}</div>
         ${markers?`<span class="dealer-tag">${markers}</span>`:''}</div>
       ${p.bet>0&&state.phase!=='finished'?`<span class="chip-bet">${fmt(p.bet)}</span>`:''}</div>`;
   }).join('');
@@ -105,10 +105,11 @@ function render(state) {
   const whoseTurn=state.seats[state.turn];
   $('table-status').textContent=state.dealing?'플롭 카드 공개 중':state.revealing?'패 공개 · 공통 카드 진행 중':whoseTurn?`${whoseTurn.name}님의 차례`:state.running?state.nextAt?'다음 판 준비 중':'게임 진행 중':state.phase==='finished'?'방장이 시작하면 다음 판이 진행됩니다.':'방장의 게임 시작을 기다립니다.';
   if(state.odds)$('table-status').textContent+=state.odds.estimated?' · 승률 추정':' · 승률';
-  $('my-status').textContent=me?`${me.name} · ${fmt(me.chips)}칩${me.leaving?' · 퇴장 예약':me.away?' · 자리비움':''}`:'관전 중 · 빈 좌석을 눌러 착석';
+  $('my-status').textContent=me?`${me.name} · ${fmt(me.chips)}칩${me.leaving?' · 퇴장 예약':me.away?' · 자리비움':me.chips===0&&!['preflop','flop','turn','river'].includes(state.phase)?' · 칩 소진 / 관전':''}`:state.sessionActive?'관전 중 · 게임 진행 중에는 착석 불가':state.balance===0?'관전 중 · 보유칩 소진':'관전 중 · 빈 좌석을 눌러 착석';
+  $('made-info').hidden=!state.myMade;
   $('away').disabled=!me||me.leaving;$('away').textContent=me?.away?'복귀':'자리비움';$('leave-seat').disabled=!me||me.leaving;
   $('admin-login-in-room').hidden=state.admin;
-  $('start-game').disabled=state.running||busy;$('stop-game').disabled=!state.running||busy;$('cancel-game').disabled=(!state.running&&!['preflop','flop','turn','river'].includes(state.phase))||busy;
+  $('start-game').disabled=state.running||busy;$('stop-game').disabled=!state.sessionActive||busy;
   $('result').hidden=!state.result;
   if(state.result) {
     const winners=state.result.winners.map(w=>`<b>${esc(w.name)}</b> +${fmt(w.amount)}칩 <small>${esc(w.hand)}</small>`).join('<br>');
@@ -193,8 +194,7 @@ $('exit-room').onclick=async()=>{
   try{await request('/api/exit',{});token=null;current=null;sessionStorage.removeItem('basan-holdem-token');$('game').hidden=true;$('lobby').hidden=false;$('admin-bar').hidden=true;}
   catch(e){toast(e.message);}finally{busy=false;}
 };
-$('start-game').onclick=()=>command('/api/admin/start');$('stop-game').onclick=()=>command('/api/admin/stop');
-$('cancel-game').onclick=()=>{if(confirm('진행 중인 판을 취소하고 베팅칩을 반환할까요?'))command('/api/admin/cancel');};
+$('start-game').onclick=()=>command('/api/admin/start');$('stop-game').onclick=()=>{if(confirm('게임을 종료하고 모두의 좌석과 보유칩을 초기화할까요? 진행 중인 판은 취소됩니다.'))return command('/api/admin/stop');};
 $('admin-panel-button').onclick=()=>{
   for(const [k,v] of Object.entries({...current.settings,startingChips:current.startingChips}))if($('settings-form').elements[k])$('settings-form').elements[k].value=v;
   $('settings-dialog').showModal();

@@ -42,7 +42,10 @@ const nameOf=value=>{
 const isConnected=id=>{for(const s of sessions.values()) if(s.id===id&&Date.now()-s.lastSeen<12000)return true;return false;};
 function state(room,user) {
   return {...room.table.view(user.id),me:user.id,name:user.name,code:room.code,title:room.title,
-    admin:room.adminId===user.id,running:room.running,nextAt:room.nextAt||0,startingChips:room.startingChips,
+    admin:room.adminId===user.id,running:room.running,sessionActive:!!room.sessionActive,
+    canSit:!room.sessionActive&&!room.table.playing&&!room.table.player(user.id)&&(room.table.balances.get(user.id)??room.startingChips)>0,
+    balance:room.table.player(user.id)?.chips??room.table.balances.get(user.id)??room.startingChips,
+    nextAt:room.nextAt||0,startingChips:room.startingChips,
     serverTime:Date.now(),seats:room.table.view(user.id).seats.map(p=>p?{...p,connected:isConnected(p.id)}:null)};
 }
 async function body(req) {
@@ -99,7 +102,10 @@ export const server=http.createServer(async(req,res)=>{
     if(url.pathname==='/api/state'&&req.method==='GET')return json(state(room,user));
     if(req.method!=='POST')fail('잘못된 요청입니다.',405);
     if(url.pathname==='/api/admin-login') {checkPassword(data.password,ip);room.adminId=user.id;room.table.log('방장 관리 권한이 활성화되었습니다.');}
-    else if(url.pathname==='/api/sit') room.table.sit(user.id,user.name,Number(data.seat),room.startingChips);
+    else if(url.pathname==='/api/sit') {
+      if(room.sessionActive||room.table.playing)fail('게임 시작 후에는 중간 참여할 수 없습니다. 관전은 가능합니다.');
+      room.table.sit(user.id,user.name,Number(data.seat),room.startingChips);
+    }
     else if(url.pathname==='/api/leave-seat') room.table.leave(user.id);
     else if(url.pathname==='/api/away') {
       const p=room.table.player(user.id);if(!p)fail('먼저 착석해주세요.');p.away=!p.away;room.table.log(`${p.name} · ${p.away?'자리비움':'복귀'}`);
@@ -113,17 +119,17 @@ export const server=http.createServer(async(req,res)=>{
       if(command==='start') {
         if(room.running)fail('이미 게임이 시작되었습니다.');
         if(!room.table.playing) room.table.start(isConnected);
-        room.running=true;room.nextAt=0;room.table.log('방장이 게임을 시작했습니다. 이후 판은 자동으로 진행됩니다.');
-      } else if(command==='stop') {
-        room.running=false;room.nextAt=0;room.table.log(room.table.playing?'현재 판이 끝나면 게임을 종료합니다.':'방장이 게임을 종료했습니다.');
-      } else if(command==='cancel') {room.running=false;room.nextAt=0;room.table.cancel();}
+        room.running=true;room.sessionActive=true;room.nextAt=0;room.table.log('방장이 게임을 시작했습니다. 중간 착석은 마감되었습니다.');
+      } else if(command==='stop'||command==='cancel') {
+        room.running=false;room.sessionActive=false;room.nextAt=0;room.table.resetSession();
+      }
       else if(command==='blinds') {
         room.table.setBlinds(Number(data.smallBlind),Number(data.bigBlind));
       } else if(command==='settings') {
-        if(room.running||room.table.playing)fail('게임 종료 후 설정할 수 있습니다.');
+        if(room.sessionActive||room.running||room.table.playing)fail('게임 종료 후 설정할 수 있습니다.');
         config(room,data);room.table.log('방장이 블라인드와 시작칩 설정을 변경했습니다.');
       } else if(command==='reset') {
-        if(room.running||room.table.playing)fail('게임 종료 후 칩을 초기화할 수 있습니다.');
+        if(room.sessionActive||room.running||room.table.playing)fail('방장이 게임종료를 누른 후 칩을 초기화할 수 있습니다.');
         for(const p of room.table.seats.filter(Boolean))Object.assign(p,{chips:room.startingChips,inHand:false,cards:[],bet:0,total:0,folded:false,allIn:false,action:''});
         for(const id of room.table.balances.keys())room.table.balances.set(id,room.startingChips);
         room.table.phase='waiting';room.table.board=[];room.table.result=null;room.table.odds=null;room.table.revealing=false;room.table.runoutAt=0;room.table.log('모든 참가자의 가상칩이 초기화되었습니다.');
