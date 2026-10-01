@@ -46,7 +46,7 @@ function config(room,data) {
   const small=Number(data.smallBlind),big=Number(data.bigBlind),chips=Number(data.startingChips),seconds=Number(data.turnSeconds);
   if(![small,big,chips,seconds].every(Number.isSafeInteger)||small<1||big<small*2||big>100000||chips<big*10||chips>10000000||seconds<10||seconds>120)
     fail('블라인드·칩·제한시간을 확인해주세요. 빅블라인드는 스몰의 2배 이상, 시작칩은 빅블라인드의 10배 이상이어야 합니다.');
-  room.table.settings={smallBlind:small,bigBlind:big,turnSeconds:seconds};room.startingChips=chips;
+  room.table.settings={smallBlind:small,bigBlind:big,turnSeconds:seconds};room.table.pendingBlinds=null;room.table.minRaise=big;room.startingChips=chips;
 }
 export const server=http.createServer(async(req,res)=>{
   res.setHeader('X-Content-Type-Options','nosniff');
@@ -108,7 +108,9 @@ export const server=http.createServer(async(req,res)=>{
       } else if(command==='stop') {
         room.running=false;room.nextAt=0;room.table.log(room.table.playing?'현재 판이 끝나면 게임을 종료합니다.':'방장이 게임을 종료했습니다.');
       } else if(command==='cancel') {room.running=false;room.nextAt=0;room.table.cancel();}
-      else if(command==='settings') {
+      else if(command==='blinds') {
+        room.table.setBlinds(Number(data.smallBlind),Number(data.bigBlind));
+      } else if(command==='settings') {
         if(room.running||room.table.playing)fail('게임 종료 후 설정할 수 있습니다.');
         config(room,data);room.table.log('방장이 블라인드와 시작칩 설정을 변경했습니다.');
       } else if(command==='reset') {

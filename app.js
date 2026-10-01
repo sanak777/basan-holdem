@@ -33,10 +33,11 @@ function render(state) {
   $('lobby').hidden=true;$('game').hidden=false;
   $('admin-bar').hidden=!state.admin;
   if(!state.admin && $('settings-dialog').open)$('settings-dialog').close();
+  if(!state.admin && $('blinds-dialog').open)$('blinds-dialog').close();
   $('code-label').textContent=state.code;$('phase-label').textContent=phaseNames[state.phase];$('hand-label').textContent=`HAND ${state.handNo}`;
   $('pot').textContent=fmt(state.phase==='finished'?state.result?.pots.reduce((n,p)=>n+p.amount,0):state.pot);
   $('board').innerHTML=Array.from({length:5},(_,i)=>card(state.board[i],!state.board[i])).join('');
-  $('blind-label').textContent=`NLH · ${fmt(state.settings.smallBlind)} / ${fmt(state.settings.bigBlind)}`;
+  $('blind-label').textContent=`NLH · ${fmt(state.settings.smallBlind)} / ${fmt(state.settings.bigBlind)}${state.pendingBlinds?` · 다음 판 ${fmt(state.pendingBlinds.smallBlind)} / ${fmt(state.pendingBlinds.bigBlind)}`:''}`;
   const me=state.seats.find(p=>p?.id===state.me),mySeat=me?.seat;
   const seats=Array.from({length:10},(_,visual)=>{
     const seat=mySeat===undefined?visual:(visual+mySeat-5+10)%10,p=state.seats[seat];
@@ -148,6 +149,21 @@ $('admin-panel-button').onclick=()=>{
   for(const [k,v] of Object.entries({...current.settings,startingChips:current.startingChips}))if($('settings-form').elements[k])$('settings-form').elements[k].value=v;
   $('settings-dialog').showModal();
 };
+$('blind-adjust').onclick=()=>{
+  if(!current?.admin)return;
+  const blinds=current.pendingBlinds||current.settings;
+  $('blind-small').value=blinds.smallBlind;$('blind-big').value=blinds.bigBlind;
+  $('blind-adjust-note').textContent=['preflop','flop','turn','river'].includes(current.phase)
+    ?`현재 판은 ${fmt(current.settings.smallBlind)} / ${fmt(current.settings.bigBlind)}로 마칩니다. 변경은 다음 판부터 적용됩니다.`
+    :'대기 중에는 즉시 적용되며, 다음 게임은 변경한 블라인드로 시작합니다.';
+  $('blinds-dialog').showModal();
+};
+$('blinds-form').addEventListener('submit',async e=>{
+  e.preventDefault();if(!current?.admin)return;
+  if(await command('/api/admin/blinds',{smallBlind:Number($('blind-small').value),bigBlind:Number($('blind-big').value)})) {
+    $('blinds-dialog').close();toast(current.pendingBlinds?'블라인드를 예약했습니다. 다음 판부터 적용됩니다.':'블라인드를 변경했습니다.');
+  }
+});
 $('settings-form').addEventListener('submit',async e=>{
   e.preventDefault();const data=Object.fromEntries(new FormData(e.target));if(await command('/api/admin/settings',data)){toast('설정을 저장했습니다. 시작칩 변경은 새 참가자에게 적용됩니다. 전체 적용은 칩 초기화를 눌러주세요.');$('settings-dialog').close();}
 });

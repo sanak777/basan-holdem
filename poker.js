@@ -46,12 +46,12 @@ export function deck() {
 }
 const requireRule = (condition,message) => { if(!condition) throw new Error(message); };
 export class Table {
-  constructor({smallBlind=500,bigBlind=1000,turnSeconds=30}={}) {
+  constructor({smallBlind=3000,bigBlind=6000,turnSeconds=30}={}) {
     this.settings={smallBlind,bigBlind,turnSeconds};
     this.seats=Array(10).fill(null);
     this.dealer=-1; this.phase='waiting'; this.handNo=0; this.board=[];
     this.turn=-1; this.deadline=0; this.currentBet=0; this.minRaise=bigBlind;
-    this.result=null; this.logs=[]; this.version=0; this.balances=new Map();
+    this.result=null; this.logs=[]; this.version=0; this.balances=new Map(); this.pendingBlinds=null;
   }
   get playing() { return ['preflop','flop','turn','river'].includes(this.phase); }
   log(message) { this.logs.push({message,time:Date.now()}); this.logs=this.logs.slice(-40); this.version++; }
@@ -64,6 +64,20 @@ export class Table {
     this.log(`${name}님이 ${seat+1}번 좌석에 앉았습니다.`);
   }
   player(id) { return this.seats.find(p=>p?.id===id); }
+  setBlinds(smallBlind,bigBlind) {
+    requireRule(Number.isSafeInteger(smallBlind)&&Number.isSafeInteger(bigBlind)&&smallBlind>=1&&bigBlind>=smallBlind*2&&bigBlind<=100000,
+      '블라인드를 확인해주세요. 빅 블라인드는 스몰의 2배 이상, 최대 100,000칩이어야 합니다.');
+    if(this.playing) {
+      this.pendingBlinds={smallBlind,bigBlind};
+      this.log(`방장 블라인드 변경 예약 · 다음 판부터 ${smallBlind.toLocaleString()} / ${bigBlind.toLocaleString()}`);
+    } else {
+      this.settings={...this.settings,smallBlind,bigBlind};this.pendingBlinds=null;this.minRaise=bigBlind;
+      this.log(`방장 블라인드 변경 · ${smallBlind.toLocaleString()} / ${bigBlind.toLocaleString()}`);
+    }
+  }
+  applyPendingBlinds() {
+    if(this.pendingBlinds) {this.settings={...this.settings,...this.pendingBlinds};this.pendingBlinds=null;this.minRaise=this.settings.bigBlind;}
+  }
   next(from,predicate) {
     for(let n=1;n<=10;n++) { const s=(from+n+10)%10; if(this.seats[s] && predicate(this.seats[s])) return s; }
     return -1;
@@ -79,6 +93,7 @@ export class Table {
     this.cleanup();
     const ready=p=>p.chips>0&&!p.away&&!p.leaving&&connected(p.id);
     requireRule(this.seats.filter(p=>p&&ready(p)).length>=2,'접속 중인 참가자 2명 이상이 착석해야 합니다.');
+    this.applyPendingBlinds();
     this.handNo++; this.phase='preflop'; this.result=null; this.board=[];
     this.cards=deck(); this.currentBet=this.settings.bigBlind; this.minRaise=this.settings.bigBlind;
     this.dealer=this.next(this.dealer,ready);
@@ -205,6 +220,7 @@ export class Table {
       Object.assign(p,{total:0,bet:0,cards:[],inHand:false,folded:false,allIn:false,actedAt:null,action:''});
     }
     this.phase='waiting';this.board=[];this.turn=-1;this.deadline=0;this.result=null;
+    this.applyPendingBlinds();
     this.log('방장이 즉시 종료했습니다. 진행 중인 판의 베팅칩을 반환했습니다.');this.cleanup();
   }
   cleanup() {
@@ -217,7 +233,7 @@ export class Table {
     }
   }
   view(id) {
-    return {settings:this.settings,seats:this.seats.map((p,i)=>p?{id:p.id,name:p.name,seat:i,chips:p.chips,
+    return {settings:this.settings,pendingBlinds:this.pendingBlinds,seats:this.seats.map((p,i)=>p?{id:p.id,name:p.name,seat:i,chips:p.chips,
       bet:p.bet,total:p.total,away:p.away,leaving:p.leaving,inHand:p.inHand,folded:p.folded,allIn:p.allIn,action:p.action,
       cards:p.id===id||(this.result?.showdown&&p.inHand&&!p.folded)?p.cards:p.cards.map(()=>null)}:null),
       phase:this.phase,handNo:this.handNo,dealer:this.dealer,smallSeat:this.smallSeat,bigSeat:this.bigSeat,
