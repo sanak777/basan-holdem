@@ -65,3 +65,5 @@ button,input{touch-action:manipulation}button:active:not(:disabled){transform:tr
 }
 
 .raise-form{border-top:0;margin-top:0;padding-top:0}.raise-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}.raise-header .raise-description{margin:0}#raise-cancel{padding:5px 12px;font-size:11px}.raise-entry input{padding:10px}.raise-entry .primary{white-space:nowrap}
+
+.seat[data-kick]{cursor:pointer}.seat[data-kick]:focus-visible .seat-box{outline:2px solid var(--gold)}

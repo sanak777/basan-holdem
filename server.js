@@ -117,7 +117,12 @@ export const server=http.createServer(async(req,res)=>{
     } else if(url.pathname.startsWith('/api/admin/')) {
       if(room.adminId!==user.id)fail('방장만 사용할 수 있는 기능입니다.',403);
       const command=url.pathname.split('/').pop();
-      if(command==='start') {
+      if(command==='kick') {
+        const target=room.table.player(String(data.id));if(!target)fail('참가자가 이미 자리를 떠났습니다.');
+        if(target.id===user.id)fail('방장은 자신을 강퇴할 수 없습니다.');
+        room.table.kick(target.id);
+        for(const member of [...room.members])if(sessions.get(member)?.id===target.id){sessions.delete(member);room.members.delete(member);}
+      } else if(command==='start') {
         if(room.running)fail('이미 게임이 시작되었습니다.');
         if(!room.table.playing) room.table.start(isConnected);
         room.running=true;room.sessionActive=true;room.nextAt=0;room.table.log('방장이 게임을 시작했습니다. 중간 착석은 마감되었습니다.');

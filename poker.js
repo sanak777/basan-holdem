@@ -159,6 +159,17 @@ export class Table {
     if(this.playing&&p.inHand) { p.leaving=true; p.away=true; this.log(`${p.name}님은 이번 판 이후 퇴장합니다.`); }
     else { this.balances.set(id,p.chips);this.seats[i]=null; this.log(`${p.name}님이 자리에서 일어났습니다.`); }
   }
+  kick(id) {
+    const p=this.player(id);requireRule(p,'참가자가 이미 자리를 떠났습니다.');
+    this.leave(id);
+    if(this.playing&&p.inHand&&!p.folded&&!p.allIn&&!this.revealing) {
+      p.folded=true;p.action='강퇴 · 폴드';this.version++;
+      this.log(`${p.name} · 강퇴로 폴드`,'fold');
+      if(this.seats.filter(x=>x?.inHand&&!x.folded).length===1)this.finish(false);
+      else if(this.turn===this.seats.indexOf(p))this.advance(this.seats.indexOf(p));
+    }
+    this.log(`${p.name}님을 방장이 강퇴했습니다.`);
+  }
   start(connected=()=>true) {
     requireRule(!this.playing,'이미 게임이 진행 중입니다.');
     this.cleanup();

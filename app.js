@@ -93,7 +93,7 @@ function render(state) {
     const odds=state.odds?.players.find(h=>h.id===p.id);
     const hand=state.result?.hands.find(h=>h.id===p.id)?.name||odds?.hand;
     const ownHand=p.id===state.me?state.myHand:null;
-    return `<div class="seat ${p.id===state.me?'me':''} ${state.turn===seat?'turn':''} ${p.inHand&&p.folded?'folded':''}">
+    return `<div ${state.admin&&p.id!==state.me?`data-kick="${esc(p.id)}" role="button" tabindex="0" aria-label="${esc(p.name)} 강퇴"`:""} class="seat ${p.id===state.me?'me':''} ${state.turn===seat?'turn':''} ${p.inHand&&p.folded?'folded':''}">
       <div class="seat-cards">${p.cards.map(c=>card(c)).join('')}${odds?`<span class="equity-badge">${state.odds.estimated?'≈':''}${odds.percent}%</span>`:''}</div>
       <div class="seat-box"><div class="name">${esc(p.name)}${p.id===state.me?' · 나':''}${!p.connected?'<span class="offline-dot">●</span>':''}</div>
         <div class="chips">${p.allIn&&p.inHand&&state.phase!=='finished'?'ALL IN':fmt(p.chips)}</div>
@@ -169,7 +169,8 @@ $('admin-form').addEventListener('submit',async e=>{
   } catch(e){toast(e.message);}finally{busy=false;updateActions();}
 });
 document.querySelectorAll('.close-dialog').forEach(b=>b.onclick=()=>b.closest('dialog').close());
-$('seats').onclick=async e=>{const button=e.target.closest('[data-seat]');if(button)await command('/api/sit',{seat:Number(button.dataset.seat)});};
+$('seats').onclick=async e=>{const kick=e.target.closest('[data-kick]');if(kick&&current?.admin){const p=current.seats.find(p=>p?.id===kick.dataset.kick);if(p&&confirm(`${p.name}님을 강퇴할까요? 진행 중이면 폴드 후 정산합니다. 올인한 패는 정산 후 제거합니다.`))await command('/api/admin/kick',{id:p.id});return;}const button=e.target.closest('[data-seat]');if(button)await command('/api/sit',{seat:Number(button.dataset.seat)});};
+$('seats').onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&e.target.closest('[data-kick]')){e.preventDefault();$('seats').onclick(e);}};
 async function act(kind,amount){if(!current?.legal)return;const ok=await command('/api/action',{kind,amount,handNo:current.handNo,version:current.version});if(ok){$('raise-form').hidden=true;updateActions();}}
 $('fold').onclick=()=>act('fold');$('call').onclick=()=>act('call');$('check').onclick=()=>act('check');
 $('allin').onclick=()=>{if(confirm(`보유한 ${fmt(current.legal.max-(current.seats.find(p=>p?.id===current.me)?.bet||0))}칩을 모두 베팅할까요?`))act('allin');};
