@@ -42,3 +42,15 @@ button,input{touch-action:manipulation}button:active:not(:disabled){transform:tr
  .my-status{margin-bottom:7px}.made-info{margin-bottom:7px;font-size:10px}
  .result{margin-top:28px}.result:not([hidden])+.actions-panel{margin-top:8px}
 }
+
+/* Each participant sees their own hole cards at board-card size. */
+.seat.me .seat-cards{height:78px;gap:5px}
+.seat.me .seat-cards .card{width:53px;height:75px;border-radius:5px}
+.seat.me .seat-cards .rank{font-size:26px}.seat.me .seat-cards .suit{font-size:28px}
+.seat.me .seat-cards .card:first-child,.seat.me .seat-cards .card:last-child{transform:none}
+@media(max-width:650px){
+ .seat.me .seat-cards{height:56px;gap:4px}
+ .seat.me .seat-cards .card{width:38px;height:53px}
+ .seat.me .seat-cards .rank,.seat.me .seat-cards .suit{font-size:20px}
+ .seat.me{top:91%}.actions-panel{margin-top:35px}.result{margin-top:35px}
+}
