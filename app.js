@@ -86,8 +86,8 @@ function render(state) {
   if($('board').innerHTML!==boardHTML)$('board').innerHTML=boardHTML;
   $('blind-label').textContent=`NLH · ${fmt(state.settings.smallBlind)} / ${fmt(state.settings.bigBlind)}${state.pendingBlinds?` · 다음 판 ${fmt(state.pendingBlinds.smallBlind)} / ${fmt(state.pendingBlinds.bigBlind)}`:''}`;
   const me=state.seats.find(p=>p?.id===state.me),mySeat=me?.seat;
-  const seats=Array.from({length:10},(_,visual)=>{
-    const seat=mySeat===undefined?visual:(visual+mySeat-5+10)%10,p=state.seats[seat];
+  const seats=Array.from({length:20},(_,visual)=>{
+    const seat=mySeat===undefined?visual:(visual+mySeat-19+20)%20,p=state.seats[seat];
     if(!p)return `<div class="seat"><button class="empty-seat" data-seat="${seat}" ${!state.canSit?'disabled':''}>${state.canSit?'＋':'잠김'} ${seat+1}번 좌석</button></div>`;
     const markers=p.seat===state.dealer?'D':p.seat===state.smallSeat&&state.phase==='preflop'?'SB':p.seat===state.bigSeat&&state.phase==='preflop'?'BB':'';
     const odds=state.odds?.players.find(h=>h.id===p.id);
@@ -100,8 +100,9 @@ function render(state) {
         ${ownHand?`<span class="own-hand">${esc(ownHand)}</span>${state.myMade?`<span class="made-label" title="리버까지 원페어 이상이 될 확률">메이드 ${state.myMade.percent}%</span>`:''}`:''}<div class="seat-action">${esc(p.leaving?'퇴장 예약':p.away?'자리비움':(ownHand?p.action:hand||p.action)||'착석')}</div>
         ${markers?`<span class="dealer-tag">${markers}</span>`:''}</div>
       ${p.bet>0&&state.phase!=='finished'?`<span class="chip-bet">베팅 ${fmt(p.bet)}</span>`:''}</div>`;
-  }).join('');
-  if($('seats').innerHTML!==seats)$('seats').innerHTML=seats;
+  });
+  const seatsHTML=`<div class="opponent-seats" aria-label="참가자 좌석 목록">${seats.slice(0,19).join('')}</div>${seats[19]}`;
+  if($('seats').innerHTML!==seatsHTML){const scroll=$('seats').querySelector?.('.opponent-seats')?.scrollTop||0;$('seats').innerHTML=seatsHTML;const roster=$('seats').querySelector?.('.opponent-seats');if(roster)roster.scrollTop=scroll;}
   const whoseTurn=state.seats[state.turn];
   $('table-status').textContent=state.dealing?'플롭 카드 공개 중':state.revealing?'패 공개 · 공통 카드 진행 중':whoseTurn?`${whoseTurn.name}님의 차례`:state.running?state.nextAt?'다음 판 준비 중':'게임 진행 중':state.phase==='finished'?'방장이 시작하면 다음 판이 진행됩니다.':'방장의 게임 시작을 기다립니다.';
   if(state.odds)$('table-status').textContent+=state.odds.estimated?' · 승률 추정':' · 승률';
