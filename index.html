@@ -13,7 +13,7 @@
       <p class="intro">같은 테이블, 함께 즐기는 한 판.</p>
       <form id="join-form">
         <label for="nickname">닉네임</label><input id="nickname" maxlength="16" autocomplete="nickname" placeholder="회원 닉네임을 입력하세요" required>
-        <label for="room-code">방 코드</label><input id="room-code" maxlength="6" placeholder="6자리 방 코드" autocapitalize="characters" spellcheck="false" required>
+        <label for="room-code">방 코드</label><input id="room-code" type="text" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="숫자 4자리 방 코드" autocomplete="off" spellcheck="false" required>
         <button class="primary wide" type="submit">테이블 입장 <span>→</span></button>
       </form>
       <button class="text-button" id="create-room">방장 로그인 · 새 방 만들기</button>

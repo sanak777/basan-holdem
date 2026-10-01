@@ -1,7 +1,7 @@
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 import { Table } from './poker.js';
 
 const rooms=new Map(), sessions=new Map(), limits=new Map();
@@ -10,6 +10,13 @@ const port=Number(process.env.PORT || 3000);
 const publicRoot=fileURLToPath(new URL('./public/',import.meta.url));
 const files=new Map([['/',['index.html','text/html; charset=utf-8']],['/style.css',['style.css','text/css; charset=utf-8']],['/app.js',['app.js','text/javascript; charset=utf-8']]]);
 const fail=(message,status=400)=>{throw Object.assign(new Error(message),{status});};
+export function createRoomCode(existing,start=randomInt(1000,10000)) {
+  for(let n=0;n<9000;n++) {
+    const code=String(1000+(start-1000+n)%9000);
+    if(!existing.has(code))return code;
+  }
+  fail('사용 가능한 방 코드가 없습니다.');
+}
 function throttle(key,max,windowMs) {
   let record=limits.get(key);
   if(!record||Date.now()>record.until) {record={count:0,until:Date.now()+windowMs};limits.set(key,record);}
@@ -69,7 +76,7 @@ export const server=http.createServer(async(req,res)=>{
     const data=req.method==='POST'?await body(req):{};
     if(url.pathname==='/api/create'&&req.method==='POST') {
       checkPassword(data.password,ip);if(rooms.size>=100)fail('방이 가득 찼습니다.');
-      let code;do{code=randomBytes(3).toString('hex').toUpperCase();}while(rooms.has(code));
+      const code=createRoomCode(rooms);
       const room={code,title:'바카라산악회 홀덤',table:new Table(),members:new Set(),adminId:null,running:false,nextAt:0,
         startingChips:100000,lastSeen:Date.now()};
       const user=newSession(room,nameOf(data.name));room.adminId=user.id;rooms.set(code,room);
@@ -77,7 +84,9 @@ export const server=http.createServer(async(req,res)=>{
     }
     if(url.pathname==='/api/join'&&req.method==='POST') {
       throttle(`join:${ip}`,40,60000);
-      const room=rooms.get(String(data.code||'').trim().toUpperCase());if(!room)fail('방을 찾을 수 없습니다. 방 코드를 다시 확인해주세요.',404);
+      const code=String(data.code||'').trim().normalize('NFKC');
+      if(!/^[0-9]{4}$/.test(code))fail('방 코드는 숫자 4자리로 입력해주세요.');
+      const room=rooms.get(code);if(!room)fail('방을 찾을 수 없습니다. 방 코드를 다시 확인해주세요.',404);
       const name=nameOf(data.name);
       if([...room.members].some(t=>sessions.get(t)?.name===name))fail('이미 사용 중인 닉네임입니다. 다른 이름을 입력해주세요.');
       const user=newSession(room,name);room.lastSeen=Date.now();return json({token:user.token,state:state(room,user)});

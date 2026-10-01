@@ -5,7 +5,9 @@ const phaseNames={waiting:'참가자 대기',preflop:'프리플롭',flop:'플롭
 const suits={s:'♠',h:'♥',d:'♦',c:'♣'},ranks={11:'J',12:'Q',13:'K',14:'A'};
 let token=sessionStorage.getItem('basan-holdem-token'),current=null,busy=false,polling=false,adminMode='create',toastTimer,epoch=0,connected=false,serverOffset=0;
 const roomQuery=new URLSearchParams(location.search).get('room');
-if(roomQuery)$('room-code').value=roomQuery.toUpperCase();
+const numericCode=value=>String(value).normalize('NFKC').replace(/[^0-9]/g,'').slice(0,4);
+if(roomQuery)$('room-code').value=numericCode(roomQuery);
+$('room-code').addEventListener('input',()=>{$('room-code').value=numericCode($('room-code').value);});
 $('nickname').value=localStorage.getItem('basan-holdem-name')||'';
 function toast(message) {$('toast').textContent=message;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,4500);}
 async function request(path,data) {
