@@ -77,7 +77,7 @@ function render(state) {
   const prior=current;current=state;serverOffset=state.serverTime-Date.now();
   soundEvents(prior,state);
   $('lobby').hidden=true;$('game').hidden=false;
-  $('admin-bar').hidden=!state.admin;
+  $('admin-bar').hidden=!state.admin;$('admin-drawer').hidden=!state.admin;
   if(!state.admin && $('settings-dialog').open)$('settings-dialog').close();
   if(!state.admin && $('blinds-dialog').open)$('blinds-dialog').close();
   $('code-label').textContent=state.code;$('phase-label').textContent=phaseNames[state.phase];$('hand-label').textContent=`HAND ${state.handNo}`;
@@ -225,3 +225,9 @@ $('settings-form').addEventListener('submit',async e=>{
 $('reset-chips').onclick=()=>{if(confirm('모든 참가자의 가상칩을 시작칩으로 초기화할까요?'))command('/api/admin/reset');};
 $('admin-logout').onclick=async()=>{if(await command('/api/admin/logout')){$('settings-dialog').close();toast('관리자 로그아웃 완료');}};
 setInterval(poll,400);setInterval(updateClock,250);if(token)poll();
+
+$('fullscreen-toggle').onclick=async()=>{
+ try{if(document.fullscreenElement)await document.exitFullscreen();else if(document.documentElement?.requestFullscreen)await document.documentElement.requestFullscreen();else toast('이 브라우저는 전체화면을 지원하지 않습니다. 홈 화면에 추가해서 실행해주세요.');}
+ catch(e){toast('전체화면을 열지 못했습니다. 브라우저 메뉴의 홈 화면에 추가를 이용해주세요.');}
+};
+document.addEventListener('fullscreenchange',()=>{$('fullscreen-toggle').textContent=document.fullscreenElement?'전체화면 해제':'전체화면';});

@@ -67,3 +67,23 @@ button,input{touch-action:manipulation}button:active:not(:disabled){transform:tr
 .raise-form{border-top:0;margin-top:0;padding-top:0}.raise-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}.raise-header .raise-description{margin:0}#raise-cancel{padding:5px 12px;font-size:11px}.raise-entry input{padding:10px}.raise-entry .primary{white-space:nowrap}
 
 .seat[data-kick]{cursor:pointer}.seat[data-kick]:focus-visible .seat-box{outline:2px solid var(--gold)}
+
+#admin-drawer{max-width:650px;margin:10px auto}#admin-drawer summary{cursor:pointer;color:var(--gold);font-size:11px;padding:9px;border:1px solid #4c6149;border-radius:8px}#admin-drawer .admin-bar{margin-top:5px}
+@media(max-width:650px){
+ .game:not([hidden]){height:100dvh;max-width:none;display:flex;flex-direction:column;padding:0 7px;overflow:hidden}
+ .topbar{height:39px;min-height:39px;flex-shrink:0}.wordmark{font-size:11px}.room-pill{font-size:9px;padding:5px}.header-right{gap:3px}.sound-toggle{font-size:8px;padding:5px 4px}
+ .table-meta{flex-shrink:0;line-height:14px;font-size:8px;margin:0 4px 2px}
+ .table-wrap{flex:1;min-height:0;height:auto;width:100%;max-width:440px;margin:0 auto}
+ .felt{inset:2px 20px 20px;border-radius:65px}.felt-inner{inset:9px}
+ .seat{width:86px}.seat:nth-child(1){top:10%}.seat:nth-child(2),.seat:nth-child(10){top:25%}.seat:nth-child(3),.seat:nth-child(9){top:43%}.seat:nth-child(4),.seat:nth-child(8){top:64%}.seat:nth-child(5),.seat:nth-child(7){top:81%}.seat:nth-child(6){top:94%}
+ .seat-box{padding:3px 5px;min-height:37px}.seat .name{font-size:9px}.seat .chips{font-size:10px;margin-top:2px}.seat .seat-action{font-size:8px;margin-top:1px}.seat-cards{height:20px}.seat-cards .card{height:19px;width:15px}.seat-cards .rank,.seat-cards .suit{font-size:9px}.seat .chip-bet{font-size:9px;padding:1px 4px;margin-top:1px;min-height:13px}
+ .table-center{top:47%;width:220px;transform:translate(-50%,-15%)}.table-center .card{width:32px;height:45px}.table-center .card .rank,.table-center .card .suit{font-size:18px}.board{gap:3px}.pot{font-size:17px;margin:2px 0 4px}.pot-label{font-size:7px}.table-status{font-size:9px;margin-top:5px}.blind-label{font-size:8px;margin-top:3px}.felt-watermark{display:none}
+ .seat.me{width:94px;top:90%!important}.seat.me .seat-cards{height:47px;gap:3px}.seat.me .seat-cards .card{width:32px;height:45px}.seat.me .seat-cards .rank,.seat.me .seat-cards .suit{font-size:18px}.seat.me .own-hand,.seat.me .made-label{font-size:7px}
+ .actions-panel{flex-shrink:0;width:100%;margin:24px auto 0;padding:7px 8px;border-radius:9px}.my-status{font-size:10px;min-height:12px;margin-bottom:4px}.made-info{font-size:8px;line-height:1.3;margin:0 0 5px}.action-grid button{height:37px;font-size:11px}.allin-extra{margin-top:4px;padding:4px 16px;font-size:10px}.player-tools{margin-top:4px}.player-tools button{font-size:8px;padding:3px 0}.raise-entry{margin-top:5px}.raise-entry input{padding:6px}.bet-presets button{padding:5px;font-size:10px}.raise-header{margin-bottom:5px}#raise-hint{margin-top:3px}
+ .result{position:absolute;left:50%;top:calc(47% + 50px);transform:translateX(-50%);width:210px;margin:0;padding:4px 7px;font-size:10px;z-index:4;pointer-events:none}.result small{font-size:8px}
+ #admin-drawer{flex-shrink:0;width:100%;margin:3px auto 0}#admin-drawer summary{padding:4px 7px;font-size:9px}#admin-drawer .admin-bar{padding:5px;margin-top:2px;gap:4px}#admin-drawer .admin-bar button{min-height:26px;padding:4px;font-size:9px}
+ .game-footer{flex-shrink:0;padding:3px 0 max(3px,env(safe-area-inset-bottom));font-size:7px}
+}
+@media(max-width:650px)and(max-height:580px){.game:not([hidden]){overflow:auto}.table-wrap{flex:none;height:360px}.actions-panel{margin-top:22px}}
+
+@media(max-width:650px){.seat:nth-child(2),.seat:nth-child(10){top:18%}.seat:nth-child(3),.seat:nth-child(9){top:36%}.seat:nth-child(4),.seat:nth-child(8){top:74%}.seat:nth-child(5),.seat:nth-child(7){top:92%}.result:not([hidden])+.actions-panel{margin-top:24px}}
