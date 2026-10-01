@@ -44,17 +44,42 @@ export function deck() {
   }
   return cards;
 }
+export function equity(players,board,sampleCount=1200) {
+  const known=new Set([...board,...players.flatMap(p=>p.cards)].map(c=>c.r+c.s));
+  const remaining=[];
+  for(const s of ['s','h','d','c'])for(let r=2;r<=14;r++)if(!known.has(r+s))remaining.push({r,s});
+  const needed=5-board.length,shares=players.map(()=>0);let trials=0;
+  const trial=extra=>{
+    const scores=players.map(p=>evaluate([...p.cards,...board,...extra]));
+    const best=scores.reduce((a,b)=>compare(a,b)>0?a:b);
+    const wins=scores.map((s,i)=>compare(s,best)===0?i:-1).filter(i=>i>=0);
+    for(const i of wins)shares[i]+=1/wins.length;trials++;
+  };
+  if(needed===0)trial([]);
+  else if(needed===1)for(const c of remaining)trial([c]);
+  else if(needed===2)for(let i=0;i<remaining.length-1;i++)for(let j=i+1;j<remaining.length;j++)trial([remaining[i],remaining[j]]);
+  else for(let n=0;n<sampleCount;n++) {
+    for(let i=0;i<needed;i++){const j=randomInt(i,remaining.length);[remaining[i],remaining[j]]=[remaining[j],remaining[i]];}
+    trial(remaining.slice(0,needed));
+  }
+  return {estimated:needed>2,samples:trials,players:players.map((p,i)=>({id:p.id,percent:Math.round(shares[i]/trials*1000)/10,
+    hand:board.length>=3?HAND_NAMES[evaluate([...p.cards,...board])[0]]:p.cards[0].r===p.cards[1].r?'원페어':'하이카드'}))};
+}
 const requireRule = (condition,message) => { if(!condition) throw new Error(message); };
 export class Table {
-  constructor({smallBlind=3000,bigBlind=6000,turnSeconds=30}={}) {
+  constructor({smallBlind=3000,bigBlind=6000,turnSeconds=30,computeOdds=true}={}) {
     this.settings={smallBlind,bigBlind,turnSeconds};
     this.seats=Array(10).fill(null);
     this.dealer=-1; this.phase='waiting'; this.handNo=0; this.board=[];
     this.turn=-1; this.deadline=0; this.currentBet=0; this.minRaise=bigBlind;
     this.result=null; this.logs=[]; this.version=0; this.balances=new Map(); this.pendingBlinds=null;
+    this.computeOdds=computeOdds;this.revealing=false;this.runoutAt=0;this.odds=null;this.events=[];this.eventId=0;
   }
   get playing() { return ['preflop','flop','turn','river'].includes(this.phase); }
-  log(message) { this.logs.push({message,time:Date.now()}); this.logs=this.logs.slice(-40); this.version++; }
+  log(message,sound=null) {
+    this.logs.push({message,time:Date.now()});this.logs=this.logs.slice(-40);this.version++;
+    if(sound){this.events.push({id:++this.eventId,type:sound,time:Date.now()});this.events=this.events.slice(-40);}
+  }
   sit(id,name,seat,chips) {
     requireRule(Number.isInteger(seat)&&seat>=0&&seat<10,'좌석을 선택해주세요.');
     requireRule(!this.seats.some(p=>p?.id===id),'이미 착석 중입니다.');
@@ -94,7 +119,7 @@ export class Table {
     const ready=p=>p.chips>0&&!p.away&&!p.leaving&&connected(p.id);
     requireRule(this.seats.filter(p=>p&&ready(p)).length>=2,'접속 중인 참가자 2명 이상이 착석해야 합니다.');
     this.applyPendingBlinds();
-    this.handNo++; this.phase='preflop'; this.result=null; this.board=[];
+    this.handNo++; this.phase='preflop'; this.result=null; this.board=[];this.revealing=false;this.runoutAt=0;this.odds=null;
     this.cards=deck(); this.currentBet=this.settings.bigBlind; this.minRaise=this.settings.bigBlind;
     this.dealer=this.next(this.dealer,ready);
     for(const p of this.seats.filter(Boolean)) {
@@ -110,7 +135,7 @@ export class Table {
     this.smallSeat=sb; this.bigSeat=bb;
     this.pay(this.seats[sb],this.settings.smallBlind); this.seats[sb].action='스몰 블라인드';
     this.pay(this.seats[bb],this.settings.bigBlind); this.seats[bb].action='빅 블라인드';
-    this.log(`${this.handNo}번째 판 시작 · 블라인드 ${this.settings.smallBlind.toLocaleString()} / ${this.settings.bigBlind.toLocaleString()}`);
+    this.log(`${this.handNo}번째 판 시작 · 블라인드 ${this.settings.smallBlind.toLocaleString()} / ${this.settings.bigBlind.toLocaleString()}`,'deal');
     this.advance(bb);
   }
   pay(p,amount) {
@@ -154,7 +179,7 @@ export class Table {
       }
     } else throw new Error('잘못된 행동입니다.');
     p.actedAt=this.currentBet;
-    this.log(`${p.name} · ${p.action}${p.action==='폴드'||p.action==='체크'?'':` ${p.bet.toLocaleString()}`}`);
+    this.log(`${p.name} · ${p.action}${p.action==='폴드'||p.action==='체크'?'':` ${p.bet.toLocaleString()}`}`,p.action==='폴드'?'fold':p.action==='체크'?'check':p.allIn?'allin':'chips');
     this.advance(seat);
   }
   advance(from) {
@@ -177,11 +202,21 @@ export class Table {
     for(let n=0;n<count;n++) this.board.push(this.cards.pop());
     for(const p of this.seats.filter(Boolean)) { p.bet=0;p.actedAt=null;p.action=p.folded?'폴드':p.allIn?'올인':''; }
     this.currentBet=0; this.minRaise=this.settings.bigBlind;
-    this.log({flop:'플롭',turn:'턴',river:'리버'}[this.phase]+' 공개');
+    this.log({flop:'플롭',turn:'턴',river:'리버'}[this.phase]+' 공개','reveal');
+  }
+  updateOdds() {
+    const live=this.seats.filter(p=>p?.inHand&&!p.folded);
+    this.odds=this.computeOdds&&live.length>1?equity(live,this.board,Math.max(400,Math.floor(3000/live.length))):null;
   }
   runout() {
-    while(this.phase!=='river') this.street();
-    this.finish(true);
+    this.revealing=true;this.turn=-1;this.deadline=0;this.updateOdds();
+    this.runoutAt=Date.now()+2500;this.log('올인 베팅 완료 · 패 공개 · 승률 계산','reveal');
+  }
+  tick(now=Date.now()) {
+    if(this.revealing&&this.playing&&now>=this.runoutAt) {
+      if(this.phase==='river')this.finish(true);
+      else {this.street();this.updateOdds();this.runoutAt=Date.now()+2500;}
+    } else this.timeout();
   }
   finish(showdown) {
     const players=this.seats.filter(p=>p?.inHand);
@@ -211,7 +246,8 @@ export class Table {
     this.result={showdown,pots,winners:[...payouts].map(([id,amount])=>({id,name:this.player(id).name,amount,
       hand:showdown?HAND_NAMES[scores.get(id)[0]]:'상대 폴드'})),returned:[...returned].map(([id,amount])=>({id,amount})),
       hands:showdown?live.map(p=>({id:p.id,name:HAND_NAMES[scores.get(p.id)[0]]})):[]};
-    this.phase='finished';this.turn=-1;this.deadline=0;
+    this.phase='finished';this.turn=-1;this.deadline=0;this.revealing=false;this.runoutAt=0;
+    if(showdown)this.updateOdds();else this.odds=null;
     this.log(this.result.winners.map(w=>`${w.name} ${w.amount.toLocaleString()}칩 획득 (${w.hand})`).join(' · ')||'판 종료');
   }
   cancel() {
@@ -219,7 +255,7 @@ export class Table {
       if(this.playing)p.chips+=p.total;
       Object.assign(p,{total:0,bet:0,cards:[],inHand:false,folded:false,allIn:false,actedAt:null,action:''});
     }
-    this.phase='waiting';this.board=[];this.turn=-1;this.deadline=0;this.result=null;
+    this.phase='waiting';this.board=[];this.turn=-1;this.deadline=0;this.result=null;this.revealing=false;this.runoutAt=0;this.odds=null;
     this.applyPendingBlinds();
     this.log('방장이 즉시 종료했습니다. 진행 중인 판의 베팅칩을 반환했습니다.');this.cleanup();
   }
@@ -227,7 +263,7 @@ export class Table {
     for(let i=0;i<10;i++) if(this.seats[i]?.leaving) {this.balances.set(this.seats[i].id,this.seats[i].chips);this.seats[i]=null;}
   }
   timeout() {
-    if(this.playing && Date.now()>=this.deadline) {
+    if(this.playing && !this.revealing && this.turn>=0 && Date.now()>=this.deadline) {
       const p=this.seats[this.turn]; p.away=true;
       this.act(p.id,p.bet>=this.currentBet?'check':'fold',0,this.handNo,this.version);
     }
@@ -235,9 +271,10 @@ export class Table {
   view(id) {
     return {settings:this.settings,pendingBlinds:this.pendingBlinds,seats:this.seats.map((p,i)=>p?{id:p.id,name:p.name,seat:i,chips:p.chips,
       bet:p.bet,total:p.total,away:p.away,leaving:p.leaving,inHand:p.inHand,folded:p.folded,allIn:p.allIn,action:p.action,
-      cards:p.id===id||(this.result?.showdown&&p.inHand&&!p.folded)?p.cards:p.cards.map(()=>null)}:null),
+      cards:p.id===id||((this.revealing||this.result?.showdown)&&p.inHand&&!p.folded)?p.cards:p.cards.map(()=>null)}:null),
       phase:this.phase,handNo:this.handNo,dealer:this.dealer,smallSeat:this.smallSeat,bigSeat:this.bigSeat,
       board:this.board,turn:this.turn,deadline:this.deadline,pot:this.playing?this.seats.reduce((n,p)=>n+(p?.total||0),0):0,
-      currentBet:this.currentBet,result:this.result,legal:this.legal(id),version:this.version,logs:this.logs};
+      currentBet:this.currentBet,result:this.result,legal:this.legal(id),version:this.version,logs:this.logs,
+      revealing:this.revealing,odds:this.odds,events:this.events};
   }
 }

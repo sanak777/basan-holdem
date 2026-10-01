@@ -126,7 +126,7 @@ export const server=http.createServer(async(req,res)=>{
         if(room.running||room.table.playing)fail('게임 종료 후 칩을 초기화할 수 있습니다.');
         for(const p of room.table.seats.filter(Boolean))Object.assign(p,{chips:room.startingChips,inHand:false,cards:[],bet:0,total:0,folded:false,allIn:false,action:''});
         for(const id of room.table.balances.keys())room.table.balances.set(id,room.startingChips);
-        room.table.phase='waiting';room.table.board=[];room.table.result=null;room.table.log('모든 참가자의 가상칩이 초기화되었습니다.');
+        room.table.phase='waiting';room.table.board=[];room.table.result=null;room.table.odds=null;room.table.revealing=false;room.table.runoutAt=0;room.table.log('모든 참가자의 가상칩이 초기화되었습니다.');
       } else if(command==='logout')room.adminId=null;
       else fail('없는 기능입니다.',404);
     } else fail('없는 기능입니다.',404);
@@ -136,7 +136,7 @@ export const server=http.createServer(async(req,res)=>{
 const timer=setInterval(()=>{
   for(const [code,room] of rooms) {
     try {
-      room.table.timeout();
+      room.table.tick();
       if(room.running&&!room.table.playing) {
         if(!room.nextAt)room.nextAt=Date.now()+8000;
         if(Date.now()>=room.nextAt) {

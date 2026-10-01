@@ -4,6 +4,50 @@ const fmt=n=>Number(n||0).toLocaleString('ko-KR');
 const phaseNames={waiting:'참가자 대기',preflop:'프리플롭',flop:'플롭',turn:'턴',river:'리버',finished:'판 종료'};
 const suits={s:'♠',h:'♥',d:'♦',c:'♣'},ranks={11:'J',12:'Q',13:'K',14:'A'};
 let token=sessionStorage.getItem('basan-holdem-token'),current=null,busy=false,polling=false,adminMode='create',toastTimer,epoch=0,connected=false,serverOffset=0;
+let audioContext=null,masterGain=null,soundEnabled=localStorage.getItem('basan-holdem-sound')!=='off',lastSoundEvent=0;
+function unlockAudio() {
+  if(!soundEnabled)return;
+  try {
+    const Audio=globalThis.AudioContext||globalThis.webkitAudioContext;if(!Audio)return;
+    if(!audioContext){audioContext=new Audio();masterGain=audioContext.createGain();masterGain.gain.value=.45;masterGain.connect(audioContext.destination);}
+    if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});
+  }catch{}
+}
+function tone(at,freq,duration,volume,type='triangle') {
+  const osc=audioContext.createOscillator(),gain=audioContext.createGain();osc.type=type;osc.frequency.setValueAtTime(freq,at);
+  gain.gain.setValueAtTime(.001,at);gain.gain.exponentialRampToValueAtTime(volume,at+.004);gain.gain.exponentialRampToValueAtTime(.001,at+duration);
+  osc.connect(gain);gain.connect(masterGain);osc.start(at);osc.stop(at+duration+.01);osc.onended=()=>{osc.disconnect();gain.disconnect();};
+}
+function rustle(at,duration,frequency,volume) {
+  const buffer=audioContext.createBuffer(1,Math.ceil(audioContext.sampleRate*duration),audioContext.sampleRate),data=buffer.getChannelData(0);
+  for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(1-i/data.length);
+  const source=audioContext.createBufferSource(),filter=audioContext.createBiquadFilter(),gain=audioContext.createGain();
+  source.buffer=buffer;filter.type='bandpass';filter.frequency.value=frequency;filter.Q.value=.8;gain.gain.value=volume;
+  source.connect(filter);filter.connect(gain);gain.connect(masterGain);source.start(at);source.onended=()=>{source.disconnect();filter.disconnect();gain.disconnect();};
+}
+function playSound(kind) {
+  if(!soundEnabled||!audioContext||audioContext.state!=='running'||document.visibilityState==='hidden')return;
+  try {
+    const at=audioContext.currentTime+.02;
+    if(kind==='deal'){for(let i=0;i<8;i++)rustle(at+i*.085,.065,2600,.20);}
+    else if(kind==='reveal')rustle(at,.13,1900,.25);
+    else if(kind==='fold'){rustle(at,.13,850,.3);tone(at+.06,140,.08,.14,'sine');}
+    else if(kind==='check'){tone(at,300,.045,.16);tone(at+.10,250,.045,.14);}
+    else if(kind==='chips'||kind==='allin'){
+      const count=kind==='allin'?10:5;
+      for(let i=0;i<count;i++){tone(at+i*.03,1800+(i%3)*700,.045,.16);rustle(at+i*.03,.035,4500,.12);}
+    }
+  }catch{}
+}
+function soundEvents(prior,state) {
+  const events=state.events||[];
+  if(!prior||prior.code!==state.code){lastSoundEvent=events.at(-1)?.id||0;return;}
+  for(const event of events)if(event.id>lastSoundEvent){lastSoundEvent=event.id;if(state.serverTime-event.time<3500)playSound(event.type);}
+}
+document.addEventListener('pointerdown',unlockAudio,{capture:true});
+document.addEventListener('keydown',unlockAudio,{capture:true});
+$('sound-toggle').textContent=soundEnabled?'소리 ON':'소리 OFF';
+$('sound-toggle').onclick=()=>{soundEnabled=!soundEnabled;localStorage.setItem('basan-holdem-sound',soundEnabled?'on':'off');$('sound-toggle').textContent=soundEnabled?'소리 ON':'소리 OFF';if(masterGain)masterGain.gain.value=soundEnabled?.45:0;if(soundEnabled){unlockAudio();playSound('chips');}};
 const roomQuery=new URLSearchParams(location.search).get('room');
 const numericCode=value=>String(value).normalize('NFKC').replace(/[^0-9]/g,'').slice(0,4);
 if(roomQuery)$('room-code').value=numericCode(roomQuery);
@@ -32,6 +76,7 @@ function card(c,empty=false) {
 }
 function render(state) {
   const prior=current;current=state;serverOffset=state.serverTime-Date.now();
+  soundEvents(prior,state);
   $('lobby').hidden=true;$('game').hidden=false;
   $('admin-bar').hidden=!state.admin;
   if(!state.admin && $('settings-dialog').open)$('settings-dialog').close();
@@ -45,9 +90,10 @@ function render(state) {
     const seat=mySeat===undefined?visual:(visual+mySeat-5+10)%10,p=state.seats[seat];
     if(!p)return `<div class="seat"><button class="empty-seat" data-seat="${seat}" ${me?'disabled':''}>＋ ${seat+1}번 좌석</button></div>`;
     const markers=p.seat===state.dealer?'D':p.seat===state.smallSeat&&state.phase==='preflop'?'SB':p.seat===state.bigSeat&&state.phase==='preflop'?'BB':'';
-    const hand=state.result?.hands.find(h=>h.id===p.id)?.name;
+    const odds=state.odds?.players.find(h=>h.id===p.id);
+    const hand=state.result?.hands.find(h=>h.id===p.id)?.name||odds?.hand;
     return `<div class="seat ${p.id===state.me?'me':''} ${state.turn===seat?'turn':''} ${p.inHand&&p.folded?'folded':''}">
-      <div class="seat-cards">${p.cards.map(c=>card(c)).join('')}</div>
+      <div class="seat-cards">${p.cards.map(c=>card(c)).join('')}${odds?`<span class="equity-badge">${state.odds.estimated?'≈':''}${odds.percent}%</span>`:''}</div>
       <div class="seat-box"><div class="name">${esc(p.name)}${p.id===state.me?' · 나':''}${!p.connected?'<span class="offline-dot">●</span>':''}</div>
         <div class="chips">${p.allIn&&p.inHand&&state.phase!=='finished'?'ALL IN':fmt(p.chips)}</div>
         <div class="seat-action">${esc(p.leaving?'퇴장 예약':p.away?'자리비움':hand||p.action||'착석')}</div>
@@ -56,7 +102,8 @@ function render(state) {
   }).join('');
   if($('seats').innerHTML!==seats)$('seats').innerHTML=seats;
   const whoseTurn=state.seats[state.turn];
-  $('table-status').textContent=whoseTurn?`${whoseTurn.name}님의 차례`:state.running?state.nextAt?'다음 판 준비 중':'게임 진행 중':state.phase==='finished'?'방장이 시작하면 다음 판이 진행됩니다.':'방장의 게임 시작을 기다립니다.';
+  $('table-status').textContent=state.revealing?'패 공개 · 공통 카드 진행 중':whoseTurn?`${whoseTurn.name}님의 차례`:state.running?state.nextAt?'다음 판 준비 중':'게임 진행 중':state.phase==='finished'?'방장이 시작하면 다음 판이 진행됩니다.':'방장의 게임 시작을 기다립니다.';
+  if(state.odds)$('table-status').textContent+=state.odds.estimated?' · 승률 추정':' · 승률';
   $('my-status').textContent=me?`${me.name} · ${fmt(me.chips)}칩${me.leaving?' · 퇴장 예약':me.away?' · 자리비움':''}`:'관전 중 · 빈 좌석을 눌러 착석';
   $('away').disabled=!me||me.leaving;$('away').textContent=me?.away?'복귀':'자리비움';$('leave-seat').disabled=!me||me.leaving;
   $('admin-login-in-room').hidden=state.admin;
@@ -72,8 +119,8 @@ function render(state) {
 }
 function updateActions() {
   const l=current?.legal,disabled=!l||busy||!connected;
-  $('fold').disabled=disabled;$('check-call').disabled=disabled;
-  $('check-call').textContent=l&&!l.check?`콜 ${fmt(l.call)}`:'체크';
+  $('fold').disabled=disabled;$('call').disabled=disabled||l?.check;$('check').disabled=disabled||!l?.check;
+  $('call').textContent=l&&!l.check?`콜 ${fmt(l.call)}`:'콜';
   $('raise-toggle').disabled=disabled||!l?.canRaise||l.max<=current.currentBet;
   $('allin').disabled=disabled||!l||(l.max>current.currentBet&&!l.canRaise);
   if(l){$('raise-hint').textContent=`최소 ${fmt(l.min)}칩 · 최대 ${fmt(l.max)}칩${l.max<l.min?' (올인만 가능)':''}`;$('raise-amount').min=Math.min(l.min,l.max);$('raise-amount').max=l.max;}
@@ -119,7 +166,7 @@ $('admin-form').addEventListener('submit',async e=>{
 document.querySelectorAll('.close-dialog').forEach(b=>b.onclick=()=>b.closest('dialog').close());
 $('seats').onclick=async e=>{const button=e.target.closest('[data-seat]');if(button)await command('/api/sit',{seat:Number(button.dataset.seat)});};
 async function act(kind,amount){if(!current?.legal)return;const ok=await command('/api/action',{kind,amount,handNo:current.handNo,version:current.version});if(ok)$('raise-form').hidden=true;}
-$('fold').onclick=()=>act('fold');$('check-call').onclick=()=>act(current.legal.check?'check':'call');
+$('fold').onclick=()=>act('fold');$('call').onclick=()=>act('call');$('check').onclick=()=>act('check');
 $('allin').onclick=()=>{if(confirm(`보유한 ${fmt(current.legal.max-(current.seats.find(p=>p?.id===current.me)?.bet||0))}칩을 모두 베팅할까요?`))act('allin');};
 $('raise-toggle').onclick=()=>{$('raise-form').hidden=!$('raise-form').hidden;$('raise-amount').value=Math.min(current.legal.min,current.legal.max);};
 $('raise-form').addEventListener('submit',e=>{e.preventDefault();act('raise',Number($('raise-amount').value));});
