@@ -54,3 +54,12 @@ button,input{touch-action:manipulation}button:active:not(:disabled){transform:tr
  .seat.me .seat-cards .rank,.seat.me .seat-cards .suit{font-size:20px}
  .seat.me{top:91%}.actions-panel{margin-top:35px}.result{margin-top:35px}
 }
+
+/* Keep side seats out of the community-card band. */
+@media(max-width:650px){
+ .seat:nth-child(2),.seat:nth-child(10){top:17%}
+ .seat:nth-child(3),.seat:nth-child(9){top:37%}
+ .seat:nth-child(4),.seat:nth-child(8){top:74%}
+ .seat:nth-child(5),.seat:nth-child(7){top:94%}
+ .table-center{top:43%}
+}
