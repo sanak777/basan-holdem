@@ -112,7 +112,7 @@ const requireRule = (condition,message) => { if(!condition) throw new Error(mess
 export class Table {
   constructor({smallBlind=3000,bigBlind=6000,turnSeconds=30,computeOdds=true}={}) {
     this.settings={smallBlind,bigBlind,turnSeconds};
-    this.seats=Array(20).fill(null);
+    this.seats=Array(10).fill(null);
     this.dealer=-1; this.phase='waiting'; this.handNo=0; this.board=[];
     this.turn=-1; this.deadline=0; this.currentBet=0; this.minRaise=bigBlind;
     this.result=null; this.logs=[]; this.version=0; this.balances=new Map(); this.pendingBlinds=null;
@@ -126,7 +126,7 @@ export class Table {
     if(sound){this.events.push({id:++this.eventId,type:sound,time:Date.now()});this.events=this.events.slice(-40);}
   }
   sit(id,name,seat,chips) {
-    requireRule(Number.isInteger(seat)&&seat>=0&&seat<20,'좌석을 선택해주세요.');
+    requireRule(Number.isInteger(seat)&&seat>=0&&seat<10,'좌석을 선택해주세요.');
     requireRule(!this.seats.some(p=>p?.id===id),'이미 착석 중입니다.');
     requireRule(!this.seats[seat],'다른 참가자가 앉은 좌석입니다.');
     chips=this.balances.has(id)?this.balances.get(id):chips;
@@ -150,7 +150,7 @@ export class Table {
     if(this.pendingBlinds) {this.settings={...this.settings,...this.pendingBlinds};this.pendingBlinds=null;this.minRaise=this.settings.bigBlind;}
   }
   next(from,predicate) {
-    for(let n=1;n<=20;n++) { const s=(from+n+20)%20; if(this.seats[s] && predicate(this.seats[s])) return s; }
+    for(let n=1;n<=10;n++) { const s=(from+n+10)%10; if(this.seats[s] && predicate(this.seats[s])) return s; }
     return -1;
   }
   leave(id) {
@@ -307,7 +307,7 @@ export class Table {
         const best=eligible.reduce((best,p)=>compare(scores.get(p.id),best)>0?scores.get(p.id):best,scores.get(eligible[0].id));
         winners=eligible.filter(p=>compare(scores.get(p.id),best)===0);
       }
-      winners.sort((a,b)=>((this.seats.indexOf(a)-this.dealer+19)%20)-((this.seats.indexOf(b)-this.dealer+19)%20));
+      winners.sort((a,b)=>((this.seats.indexOf(a)-this.dealer+9)%10)-((this.seats.indexOf(b)-this.dealer+9)%10));
       const share=Math.floor(amount/winners.length), remainder=amount%winners.length;
       winners.forEach((p,i)=>{const won=share+(i<remainder?1:0);p.chips+=won;payouts.set(p.id,(payouts.get(p.id)||0)+won);});
       pots.push({amount,winners:winners.map(p=>({id:p.id,name:p.name}))});
@@ -329,10 +329,10 @@ export class Table {
     this.log('방장이 즉시 종료했습니다. 진행 중인 판의 베팅칩을 반환했습니다.');this.cleanup();
   }
   cleanup() {
-    for(let i=0;i<20;i++) if(this.seats[i]?.leaving) {this.balances.set(this.seats[i].id,this.seats[i].chips);this.seats[i]=null;}
+    for(let i=0;i<10;i++) if(this.seats[i]?.leaving) {this.balances.set(this.seats[i].id,this.seats[i].chips);this.seats[i]=null;}
   }
   resetSession() {
-    this.cancel();this.seats=Array(20).fill(null);this.balances.clear();
+    this.cancel();this.seats=Array(10).fill(null);this.balances.clear();
     this.dealer=-1;this.smallSeat=undefined;this.bigSeat=undefined;this.handNo=0;
     this.madeCache.clear();
     this.log('게임 종료 · 전원 관전 전환 · 좌석과 보유칩 초기화. 다음 게임은 다시 착석해주세요.');

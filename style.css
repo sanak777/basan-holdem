@@ -67,15 +67,3 @@ button,input{touch-action:manipulation}button:active:not(:disabled){transform:tr
 .raise-form{border-top:0;margin-top:0;padding-top:0}.raise-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}.raise-header .raise-description{margin:0}#raise-cancel{padding:5px 12px;font-size:11px}.raise-entry input{padding:10px}.raise-entry .primary{white-space:nowrap}
 
 .seat[data-kick]{cursor:pointer}.seat[data-kick]:focus-visible .seat-box{outline:2px solid var(--gold)}
-
-/* Twenty-seat layout: scrollable roster, separate board and personal seat. */
-.table-wrap{height:610px}.felt{inset:0 0 12px;border-radius:35px}.felt-watermark{display:none}
-.roster-note{position:absolute;top:15px;left:20px;font-size:10px;color:#d8eac5;z-index:4}
-.opponent-seats{position:absolute;top:38px;left:20px;right:20px;height:245px;overflow:auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;align-content:start;overscroll-behavior:contain;scrollbar-color:#b5c89b #153d27;scrollbar-width:thin}
-.opponent-seats .seat{position:relative!important;left:auto!important;top:auto!important;transform:none;width:auto;min-width:0}
-.opponent-seats .seat-cards{height:24px;margin-bottom:0}.opponent-seats .seat-cards .card{width:17px;height:23px;transform:none!important}.opponent-seats .seat-cards .rank,.opponent-seats .seat-cards .suit{font-size:10px}
-.opponent-seats .seat-box{padding:5px 8px;min-height:42px}.opponent-seats .name{font-size:10px}.opponent-seats .chips{font-size:11px}.opponent-seats .seat-action{font-size:9px}.opponent-seats .chip-bet{font-size:10px;margin-top:2px;padding:2px 5px}.opponent-seats .dealer-tag{right:1px;top:0}
-.seats>.seat:last-child{left:50%!important;top:auto!important;bottom:0;transform:translateX(-50%);width:150px}.table-center{top:310px;transform:translateX(-50%)}.actions-panel{margin-top:16px}.result{margin-top:16px}
-@media(max-width:650px){.table-wrap{height:510px}.felt{inset:0 0 8px;border-radius:22px}.roster-note{top:11px;left:13px;font-size:9px}.opponent-seats{top:30px;left:12px;right:12px;height:205px;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.opponent-seats .seat-box{padding:4px 7px}.opponent-seats .seat-cards{height:20px}.opponent-seats .seat-cards .card{height:19px;width:15px}.opponent-seats .seat-cards .rank,.opponent-seats .seat-cards .suit{font-size:8px}.table-center{top:250px;width:270px}.seats>.seat:last-child{bottom:0;width:116px}.actions-panel,.result{margin-top:12px}.seat.me .seat-cards{height:56px}}
-
-.table-wrap{height:650px}@media(max-width:650px){.table-wrap{height:560px}}
