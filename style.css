@@ -87,3 +87,20 @@ button,input{touch-action:manipulation}button:active:not(:disabled){transform:tr
 @media(max-width:650px)and(max-height:580px){.game:not([hidden]){overflow:auto}.table-wrap{flex:none;height:360px}.actions-panel{margin-top:22px}}
 
 @media(max-width:650px){.seat:nth-child(2),.seat:nth-child(10){top:18%}.seat:nth-child(3),.seat:nth-child(9){top:36%}.seat:nth-child(4),.seat:nth-child(8){top:74%}.seat:nth-child(5),.seat:nth-child(7){top:92%}.result:not([hidden])+.actions-panel{margin-top:24px}}
+
+/* Larger community cards, with extra space available in fullscreen. */
+@media(max-width:650px){
+ .table-center{width:270px}
+ .table-center .card,.seat.me .seat-cards .card{width:42px;height:59px}
+ .table-center .card .rank,.table-center .card .suit,.seat.me .seat-cards .rank,.seat.me .seat-cards .suit{font-size:23px}
+ .seat.me .seat-cards{height:61px}
+ .board{gap:4px}
+ .seat:nth-child(4),.seat:nth-child(8){top:78%}
+ .seat:nth-child(5),.seat:nth-child(7){top:95%}
+ .actions-panel,.result:not([hidden])+.actions-panel{margin-top:31px}
+ :fullscreen .table-center{width:290px}
+ :fullscreen .table-center .card,:fullscreen .seat.me .seat-cards .card{width:46px;height:65px}
+ :fullscreen .table-center .card .rank,:fullscreen .table-center .card .suit,:fullscreen .seat.me .seat-cards .rank,:fullscreen .seat.me .seat-cards .suit{font-size:25px}
+ :fullscreen .seat.me .seat-cards{height:67px}
+}
+@media(min-width:651px){.table-center{width:440px}.table-center .card,.seat.me .seat-cards .card{width:62px;height:87px}.table-center .card .rank,.seat.me .seat-cards .rank{font-size:31px}.table-center .card .suit,.seat.me .seat-cards .suit{font-size:33px}.seat.me .seat-cards{height:90px}}
