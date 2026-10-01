@@ -41,12 +41,13 @@ const nameOf=value=>{
 };
 const isConnected=id=>{for(const s of sessions.values()) if(s.id===id&&Date.now()-s.lastSeen<12000)return true;return false;};
 function state(room,user) {
-  return {...room.table.view(user.id),me:user.id,name:user.name,code:room.code,title:room.title,
+  const view=room.table.view(user.id);
+  return {...view,me:user.id,name:user.name,code:room.code,title:room.title,
     admin:room.adminId===user.id,running:room.running,sessionActive:!!room.sessionActive,
     canSit:!room.sessionActive&&!room.table.playing&&!room.table.player(user.id)&&(room.table.balances.get(user.id)??room.startingChips)>0,
     balance:room.table.player(user.id)?.chips??room.table.balances.get(user.id)??room.startingChips,
     nextAt:room.nextAt||0,startingChips:room.startingChips,
-    serverTime:Date.now(),seats:room.table.view(user.id).seats.map(p=>p?{...p,connected:isConnected(p.id)}:null)};
+    serverTime:Date.now(),seats:view.seats.map(p=>p?{...p,connected:isConnected(p.id)}:null)};
 }
 async function body(req) {
   let data='';for await(const chunk of req) {data+=chunk;if(data.length>8192)fail('요청 크기가 너무 큽니다.',413);}
@@ -96,7 +97,7 @@ export const server=http.createServer(async(req,res)=>{
     }
     const token=String(req.headers.authorization||'').replace(/^Bearer /,'');
     const user=sessions.get(token);if(!user)fail('입장 정보가 만료되었습니다. 다시 입장해주세요.',401);
-    throttle(`session:${token}`,180,60000);
+    throttle(`session:${token}`,360,60000);
     const room=rooms.get(user.room);if(!room)fail('방이 종료되었습니다. 다시 입장해주세요.',401);
     user.lastSeen=Date.now();room.lastSeen=Date.now();
     if(url.pathname==='/api/state'&&req.method==='GET')return json(state(room,user));
@@ -155,6 +156,6 @@ const timer=setInterval(()=>{
     } catch(error) {console.error('Game stopped:',error.message);room.running=false;room.nextAt=0;room.table.cancel();}
   }
   for(const [key,value] of limits)if(Date.now()>value.until)limits.delete(key);
-},500);
+},100);
 timer.unref();
 if(process.env.NODE_ENV!=='test') server.listen(port,'0.0.0.0',()=>console.log(`바카라산악회 홀덤 · http://localhost:${port}`));

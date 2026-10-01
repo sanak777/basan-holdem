@@ -247,7 +247,7 @@ export class Table {
     const count=this.phase==='flop'?3:1;
     this.dealQueue=[];for(let n=0;n<count;n++)this.dealQueue.push(this.cards.pop());
     this.board.push(this.dealQueue.shift());
-    this.dealing=this.dealQueue.length>0;this.dealAt=Date.now()+1200;
+    this.dealing=this.dealQueue.length>0;this.dealAt=Date.now()+400;
     if(this.dealing){this.turn=-1;this.deadline=0;}
     for(const p of this.seats.filter(Boolean)) { p.bet=0;p.actedAt=null;p.action=p.folded?'폴드':p.allIn?'올인':''; }
     this.currentBet=0; this.minRaise=this.settings.bigBlind;
@@ -266,7 +266,7 @@ export class Table {
       if(now>=this.dealAt) {
         this.board.push(this.dealQueue.shift());this.log(`플롭 ${this.board.length}번째 카드 공개`,'reveal');
         if(this.revealing)this.updateOdds();
-        this.dealing=this.dealQueue.length>0;this.dealAt=Date.now()+1200;
+        this.dealing=this.dealQueue.length>0;this.dealAt=Date.now()+400;
         if(!this.dealing){if(this.revealing)this.runoutAt=Date.now()+2500;else this.advance(this.dealer);}
       }
       return;

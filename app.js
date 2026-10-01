@@ -63,7 +63,7 @@ function enter(result) {
   history.replaceState({},'',`/?room=${result.state.code}`);$('lobby').hidden=true;$('game').hidden=false;connectedUI(true);render(result.state);
 }
 async function command(path,data={}) {
-  if(busy)return;busy=true;epoch++;updateActions();
+  if(busy)return;busy=true;epoch++;$('turn-timer').textContent='처리 중…';updateActions();
   try {const state=await request(path,data);connectedUI(true);render(state);return true;}
   catch(e){toast(e.message);return false;}
   finally{busy=false;updateActions();}
@@ -99,7 +99,7 @@ function render(state) {
         <div class="chips">${p.allIn&&p.inHand&&state.phase!=='finished'?'ALL IN':fmt(p.chips)}</div>
         ${ownHand?`<span class="own-hand">${esc(ownHand)}</span>${state.myMade?`<span class="made-label" title="리버까지 원페어 이상이 될 확률">메이드 ${state.myMade.percent}%</span>`:''}`:''}<div class="seat-action">${esc(p.leaving?'퇴장 예약':p.away?'자리비움':(ownHand?p.action:hand||p.action)||'착석')}</div>
         ${markers?`<span class="dealer-tag">${markers}</span>`:''}</div>
-      ${p.bet>0&&state.phase!=='finished'?`<span class="chip-bet">${fmt(p.bet)}</span>`:''}</div>`;
+      ${p.bet>0&&state.phase!=='finished'?`<span class="chip-bet">베팅 ${fmt(p.bet)}</span>`:''}</div>`;
   }).join('');
   if($('seats').innerHTML!==seats)$('seats').innerHTML=seats;
   const whoseTurn=state.seats[state.turn];
@@ -107,6 +107,7 @@ function render(state) {
   if(state.odds)$('table-status').textContent+=state.odds.estimated?' · 승률 추정':' · 승률';
   $('my-status').textContent=me?`${me.name} · ${fmt(me.chips)}칩${me.leaving?' · 퇴장 예약':me.away?' · 자리비움':me.chips===0&&!['preflop','flop','turn','river'].includes(state.phase)?' · 칩 소진 / 관전':''}`:state.sessionActive?'관전 중 · 게임 진행 중에는 착석 불가':state.balance===0?'관전 중 · 보유칩 소진':'관전 중 · 빈 좌석을 눌러 착석';
   $('made-info').hidden=!state.myMade;
+  if(state.myMade)$('made-info').textContent=`내 패: ${state.myHand} · 메이드 ${state.myMade.percent}% (리버까지 원페어 이상)`;
   $('away').disabled=!me||me.leaving;$('away').textContent=me?.away?'복귀':'자리비움';$('leave-seat').disabled=!me||me.leaving;
   $('admin-login-in-room').hidden=state.admin;
   $('start-game').disabled=state.running||busy;$('stop-game').disabled=!state.sessionActive||busy;
@@ -219,4 +220,4 @@ $('settings-form').addEventListener('submit',async e=>{
 });
 $('reset-chips').onclick=()=>{if(confirm('모든 참가자의 가상칩을 시작칩으로 초기화할까요?'))command('/api/admin/reset');};
 $('admin-logout').onclick=async()=>{if(await command('/api/admin/logout')){$('settings-dialog').close();toast('관리자 로그아웃 완료');}};
-setInterval(poll,1000);setInterval(updateClock,250);if(token)poll();
+setInterval(poll,400);setInterval(updateClock,250);if(token)poll();

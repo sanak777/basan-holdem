@@ -6,3 +6,7 @@
 
 .own-hand{display:block;font-size:9px;font-weight:bold;color:#fbdf95;margin-top:3px;line-height:1.25}.seat.me .seat-box{border-color:#e5c685}
 .made-label{display:block;font-size:9px;color:#8be5c0;margin-top:2px;font-weight:bold;white-space:nowrap}.made-info{font-size:9px;line-height:1.5;color:#9ab5a1;margin:-3px 0 12px}.empty-seat:disabled{opacity:.5}@media(max-width:650px){.actions-panel{margin-top:40px}.seat.me .made-label{font-size:8px}.seat.me{z-index:3}}
+
+/* Mobile seats reserve clear space below the header and expose each bet. */
+button,input{touch-action:manipulation}button:active:not(:disabled){transform:translateY(1px);filter:brightness(1.2)}
+@media(max-width:650px){.table-wrap{height:650px;margin-top:22px}.seat:nth-child(1){top:13%}.seat:nth-child(2),.seat:nth-child(10){top:25%}.seat:nth-child(3),.seat:nth-child(9){top:43%}.seat:nth-child(4),.seat:nth-child(8){top:66%}.seat:nth-child(5),.seat:nth-child(7){top:84%}.seat:nth-child(6){top:96%}.seat .chip-bet{font-size:11px;padding:4px 7px;line-height:1.3;min-height:22px;white-space:nowrap}.seat .seat-action{font-size:10px}.made-info{font-size:11px;color:#aef0cb;line-height:1.6}.table-center{top:45%}.actions-panel{margin-top:48px}}
