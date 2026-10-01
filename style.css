@@ -10,3 +10,7 @@
 /* Mobile seats reserve clear space below the header and expose each bet. */
 button,input{touch-action:manipulation}button:active:not(:disabled){transform:translateY(1px);filter:brightness(1.2)}
 @media(max-width:650px){.table-wrap{height:650px;margin-top:22px}.seat:nth-child(1){top:13%}.seat:nth-child(2),.seat:nth-child(10){top:25%}.seat:nth-child(3),.seat:nth-child(9){top:43%}.seat:nth-child(4),.seat:nth-child(8){top:66%}.seat:nth-child(5),.seat:nth-child(7){top:84%}.seat:nth-child(6){top:96%}.seat .chip-bet{font-size:11px;padding:4px 7px;line-height:1.3;min-height:22px;white-space:nowrap}.seat .seat-action{font-size:10px}.made-info{font-size:11px;color:#aef0cb;line-height:1.6}.table-center{top:45%}.actions-panel{margin-top:48px}}
+
+/* Host controls live below the betting panel, leaving the table at the top. */
+.admin-bar{max-width:650px;margin:14px auto 0;padding:12px 10px;justify-content:flex-start;border:1px solid #3b514039;border-radius:10px;background:#101c17;gap:8px}.admin-bar button{min-height:34px}
+@media(max-width:650px){.table-meta{margin:2px 6px 0}.table-wrap{margin-top:0}.admin-bar{margin:12px auto 0;padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:7px}.admin-bar button{font-size:11px;padding:9px 6px;min-height:38px}}
